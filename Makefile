@@ -17,8 +17,8 @@ ALPSORT=sum
 ALPM="[0-9a-zA-Z]+"
 OUTFORMAT=count,method,uri,min,max,sum,avg,p99
 
-SLACKCAT:=slackcat --tee --channel general
-SLACKRAW:=slackcat --channel general
+SLACKCAT:=slackcat --tee --channel notify-logs
+SLACKRAW:=slackcat --channel notify-logs
 
 # デプロイ
 # make deploy BRANCH=<ブランチ名>でブランチを指定してデプロイ
