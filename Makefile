@@ -50,7 +50,7 @@ build:
 restart:
 	sudo systemctl restart nginx
 	sudo systemctl restart mysql
-	sudo systemctl restart $(BIN_NAME).go
+	sudo systemctl restart $(BIN_NAME).golang
 
 # モニタリング
 .PHONY: notify
