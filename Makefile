@@ -23,7 +23,7 @@ SLACKRAW:=slackcat --channel notify-logs
 # デプロイ
 # make deploy BRANCH=<ブランチ名>でブランチを指定してデプロイ
 .PHONY: deploy
-deploy: before checkout build restart slow
+deploy: before checkout build restart slow-on
 
 .PHONY: before
 before:
