@@ -717,7 +717,7 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := dbx.Select(&sellers, sql, params...); err != nil {
 		log.Print(err)
-		outputErrorMsg(w, http.StatusInternalServerError, "run SQL error")
+		outputErrorMsg(w, http.StatusInternalServerError, "run SQL error: " + sql)
 	}
 
 	itemSimples := []ItemSimple{}
