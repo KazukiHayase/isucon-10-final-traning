@@ -704,20 +704,20 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var sellerIds []int64
+	var sellerIds []int
 	for _, i := range items {
-		sellerIds = append(sellerIds, i.SellerID)
+		sellerIds = append(sellerIds, int(i.SellerID))
 	}
 
 	var sellers []UserSimple
-	sql, params, err := sqlx.In("SELECT id, account_name, num_sell_items  FROM `users` WHERE `id` IN (?)", sellerIds)
+	sql, params, err := sqlx.In("SELECT id, account_name, num_sell_items FROM `users` WHERE `id` IN (?)", sellerIds)
 	if err != nil {
 		log.Print(err)
-		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		outputErrorMsg(w, http.StatusInternalServerError, "generate SQL error")
 	}
 	if err := dbx.Select(&sellers, sql, params...); err != nil {
 		log.Print(err)
-		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+		outputErrorMsg(w, http.StatusInternalServerError, "run SQL error")
 	}
 
 	itemSimples := []ItemSimple{}
@@ -730,10 +730,6 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		if err != nil {
-			outputErrorMsg(w, http.StatusNotFound, "seller not found")
-			return
-		}
 		category, err := getCategoryByID(dbx, item.CategoryID)
 		if err != nil {
 			outputErrorMsg(w, http.StatusNotFound, "category not found")
