@@ -64,6 +64,7 @@ var (
 	templates *template.Template
 	dbx       *sqlx.DB
 	store     sessions.Store
+	allCategories []Category
 )
 
 type Config struct {
@@ -326,6 +327,12 @@ func main() {
 
 	mux := goji.NewMux()
 
+	// あらかじめカテゴリを取得
+	err = dbx.Select(&allCategories, "SELECT * FROM `categories`")
+	if err != nil {
+		log.Fatalf("failed load categories: %s", err.Error())
+	}
+
 	// API
 	mux.HandleFunc(pat.Post("/initialize"), postInitialize)
 	mux.HandleFunc(pat.Get("/new_items.json"), getNewItems)
@@ -412,8 +419,14 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err
 	return userSimple, err
 }
 
+// TODO: うまくいったら他のところも修正
 func getCategoryByID(q sqlx.Queryer, categoryID int) (category Category, err error) {
-	err = sqlx.Get(q, &category, "SELECT * FROM `categories` WHERE `id` = ?", categoryID)
+	for _, c := range allCategories {
+		if (categoryID == c.ID) {
+			category = c
+		}
+	}
+
 	if category.ParentID != 0 {
 		parentCategory, err := getCategoryByID(q, category.ParentID)
 		if err != nil {
@@ -421,6 +434,7 @@ func getCategoryByID(q sqlx.Queryer, categoryID int) (category Category, err err
 		}
 		category.ParentCategoryName = parentCategory.CategoryName
 	}
+
 	return category, err
 }
 
