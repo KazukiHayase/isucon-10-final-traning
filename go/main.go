@@ -709,7 +709,7 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 		sellerIds = append(sellerIds, int(i.SellerID))
 	}
 
-	var sellers []UserSimple
+	sellers := []UserSimple{}
 	sql, params, err := sqlx.In("SELECT id, account_name, num_sell_items FROM `users` WHERE `id` IN (?)", sellerIds)
 	if err != nil {
 		log.Print(err)
