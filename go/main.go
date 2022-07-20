@@ -409,6 +409,7 @@ func getUser(r *http.Request) (user User, errCode int, errMsg string) {
 
 func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err error) {
 	user := User{}
+	// FIXME: 必要なカラムだけ取得でいい
 	err = sqlx.Get(q, &user, "SELECT * FROM `users` WHERE `id` = ?", userID)
 	if err != nil {
 		return userSimple, err
@@ -419,7 +420,6 @@ func getUserSimpleByID(q sqlx.Queryer, userID int64) (userSimple UserSimple, err
 	return userSimple, err
 }
 
-// TODO: うまくいったら他のところも修正
 func getCategoryByID(q sqlx.Queryer, categoryID int) (category Category, err error) {
 	for _, c := range allCategories {
 		if (categoryID == c.ID) {
@@ -704,9 +704,32 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var sellerIds []int64
+	for _, i := range items {
+		sellerIds = append(sellerIds, i.SellerID)
+	}
+
+	var sellers []UserSimple
+	sql, params, err := sqlx.In("SELECT id, account_name, num_sell_items  FROM `users` WHERE `id` IN (?)", sellerIds)
+	if err != nil {
+		log.Print(err)
+		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+	}
+	if err := dbx.Select(&sellers, sql, params...); err != nil {
+		log.Print(err)
+		outputErrorMsg(w, http.StatusInternalServerError, "db error")
+	}
+
 	itemSimples := []ItemSimple{}
 	for _, item := range items {
-		seller, err := getUserSimpleByID(dbx, item.SellerID)
+		var seller UserSimple
+		for _, u	:= range sellers {
+			if(u.ID == item.SellerID) {
+				seller = u
+				break
+			}
+		}
+
 		if err != nil {
 			outputErrorMsg(w, http.StatusNotFound, "seller not found")
 			return
@@ -2171,15 +2194,7 @@ func getSettings(w http.ResponseWriter, r *http.Request) {
 
 	ress.PaymentServiceURL = getPaymentServiceURL()
 
-	categories := []Category{}
-
-	err := dbx.Select(&categories, "SELECT * FROM `categories`")
-	if err != nil {
-		log.Print(err)
-		outputErrorMsg(w, http.StatusInternalServerError, "db error")
-		return
-	}
-	ress.Categories = categories
+	ress.Categories = allCategories
 
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 	json.NewEncoder(w).Encode(ress)
