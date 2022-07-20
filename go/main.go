@@ -714,10 +714,12 @@ func getNewCategoryItems(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Print(err)
 		outputErrorMsg(w, http.StatusInternalServerError, "generate SQL error")
+		return
 	}
 	if err := dbx.Select(&sellers, sql, params...); err != nil {
 		log.Print(err)
 		outputErrorMsg(w, http.StatusInternalServerError, "run SQL error: " + sql)
+		return
 	}
 
 	itemSimples := []ItemSimple{}
