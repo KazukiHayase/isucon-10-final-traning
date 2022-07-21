@@ -576,13 +576,38 @@ func getNewItems(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var sellerIds []int
+	for _, i := range items {
+		sellerIds = append(sellerIds, int(i.SellerID))
+	}
+
+	sellers := []User{}
+	sql, params, err := sqlx.In("SELECT id, account_name, num_sell_items FROM `users` WHERE `id` IN (?)", sellerIds)
+	if err != nil {
+		log.Print(err)
+		outputErrorMsg(w, http.StatusInternalServerError, "generate SQL error")
+		return
+	}
+	if err := dbx.Select(&sellers, sql, params...); err != nil {
+		log.Print(err)
+		outputErrorMsg(w, http.StatusInternalServerError, "run SQL error: " + sql)
+		return
+	}
+
 	itemSimples := []ItemSimple{}
 	for _, item := range items {
-		seller, err := getUserSimpleByID(dbx, item.SellerID)
-		if err != nil {
-			outputErrorMsg(w, http.StatusNotFound, "seller not found")
-			return
+		var seller UserSimple
+		for _, u	:= range sellers {
+			if(u.ID == item.SellerID) {
+				seller = UserSimple{
+					ID: u.ID,
+					AccountName: u.AccountName,
+					NumSellItems: u.NumSellItems,
+				}
+				break
+			}
 		}
+
 		category, err := getCategoryByID(dbx, item.CategoryID)
 		if err != nil {
 			outputErrorMsg(w, http.StatusNotFound, "category not found")
@@ -956,14 +981,39 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var userIds []int
+	for _, i := range items {
+		userIds = append(userIds, int(i.SellerID))
+		userIds = append(userIds, int(i.BuyerID))
+	}
+
+	users := []User{}
+	inQuery, params, err := sqlx.In("SELECT id, account_name, num_sell_items FROM `users` WHERE `id` IN (?)", userIds)
+	if err != nil {
+		log.Print(err)
+		outputErrorMsg(w, http.StatusInternalServerError, "generate SQL error")
+		return
+	}
+	if err := tx.Select(&users, inQuery, params...); err != nil {
+		log.Print(err)
+		outputErrorMsg(w, http.StatusInternalServerError, "run SQL error: " + inQuery)
+		return
+	}
+
 	itemDetails := []ItemDetail{}
 	for _, item := range items {
-		seller, err := getUserSimpleByID(tx, item.SellerID)
-		if err != nil {
-			outputErrorMsg(w, http.StatusNotFound, "seller not found")
-			tx.Rollback()
-			return
+		var seller UserSimple
+		for _, u	:= range users {
+			if(u.ID == item.SellerID) {
+				seller = UserSimple{
+					ID: u.ID,
+					AccountName: u.AccountName,
+					NumSellItems: u.NumSellItems,
+				}
+				break
+			}
 		}
+
 		category, err := getCategoryByID(tx, item.CategoryID)
 		if err != nil {
 			outputErrorMsg(w, http.StatusNotFound, "category not found")
@@ -991,7 +1041,17 @@ func getTransactions(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if item.BuyerID != 0 {
-			buyer, err := getUserSimpleByID(tx, item.BuyerID)
+			var buyer UserSimple
+			for _, u	:= range users {
+				if(u.ID == item.BuyerID) {
+					buyer = UserSimple{
+						ID: u.ID,
+						AccountName: u.AccountName,
+						NumSellItems: u.NumSellItems,
+					}
+					break
+				}
+			}
 			if err != nil {
 				outputErrorMsg(w, http.StatusNotFound, "buyer not found")
 				tx.Rollback()
