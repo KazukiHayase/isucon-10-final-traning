@@ -34,7 +34,6 @@ CREATE TABLE `items` (
 ) ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4;
 
 ALTER TABLE `items` ADD INDEX items_created_at_id_index(created_at DESC, id DESC);
-ALTER TABLE `items` ADD INDEX items_statusindex(status);
 
 DROP TABLE IF EXISTS `transaction_evidences`;
 CREATE TABLE `transaction_evidences` (
